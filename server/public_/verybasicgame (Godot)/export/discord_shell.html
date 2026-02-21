@@ -1,0 +1,248 @@
+<!-- USE THIS FILE AS CUSTOM EXPORT HTML WHEN EXPORTING THE GAME 
+ (in this example i develops example game with godot)-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+  <title>$GODOT_PROJECT_NAME</title>
+  <style>
+    html,
+    body,
+    #canvas {
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    body {
+      color: white;
+      background-color: black;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #canvas {
+      display: block;
+    }
+
+    #canvas:focus {
+      outline: none;
+    }
+
+    #status,
+    #status-splash {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+    }
+
+    #status {
+      background-color: #242424;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      visibility: hidden;
+    }
+
+    #status-splash {
+      max-height: 100%;
+      max-width: 100%;
+      margin: auto;
+    }
+
+    #status-progress {
+      display: none;
+      bottom: 10%;
+      width: 50%;
+      margin: 0 auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+    }
+
+    #status-notice {
+      display: none;
+      background-color: #5b3943;
+      border: 1px solid #9b3943;
+      color: #e0e0e0;
+      padding: 1rem;
+      position: absolute;
+      z-index: 1;
+    }
+  </style>
+
+  <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+  <link rel="apple-touch-icon" href="index.apple-touch-icon.png" />
+
+  <script type="module">
+    // 1. นำเข้า SDK จากไฟล์ที่เราสร้างเอง
+    import { DiscordSDK } from './discord.js';
+
+    // 2. สร้าง Bridge ให้ Godot เรียกใช้
+    window.DiscordBridge = {
+      init: async function (callback) {
+        console.log("[DiscordBridge] Init called");
+        try {
+
+
+          const clientId = "YOURCLIENTID (APP ID)";
+          const discordSdk = new DiscordSDK(clientId);
+          await discordSdk.ready();
+
+          // 1. ขอ Code ใบเบิกทาง
+          const { code } = await discordSdk.commands.authorize({
+            client_id: clientId,
+            response_type: "code",
+            state: "",
+            prompt: "consent",
+            scope: ["identify", "guilds", "rpc.activities.write", "applications.commands", "rpc.voice.read"],
+          });
+
+          console.log("ได้ Code แล้ว กำลังแลก Token...");
+
+          // 2. แลก Token กับ Backend ของเราเอง
+          // (ใช้ที่อยู่ของ Cloudflare โยงเข้าหา /api/token)
+          const tokenResponse = await fetch('/api/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              code:
+                code,
+            }),
+          });
+
+          const tokenData = await tokenResponse.json();
+          console.log("ได้ Token แล้ว");
+
+          if (!tokenResponse.ok || !tokenData.access_token) {
+            throw new Error("แลก Token ไม่สำเร็จ สาเหตุ: " + JSON.stringify(tokenData));
+          }
+
+          console.log("🔑 ได้ Access Token แล้ว! กำลัง Authenticate...");
+
+          //ยืนยันตัวตน SDK ตัวจริง
+          const authResult = await discordSdk.commands.authenticate({
+            access_token: tokenData.access_token
+          });
+
+          // 🌟 4. ส่งข้อมูล Auth Success กลับไปให้ Godot เริ่มเกมได้เลย
+          callback(JSON.stringify({
+            type: "AUTH_SUCCESS",
+            data: authResult // ตอนนี้มีข้อมูล User ID, Username ให้ Godot ใช้ได้ด้วย!
+          }));
+
+          // 🎙️ 5. ล็อกอินเสร็จแล้ว เริ่มแอบฟังไมค์ได้เลย!
+          const channelId = discordSdk.channelId;
+          if (channelId != null) {
+            await discordSdk.subscribe("SPEAKING_START", (event) => {
+              callback(JSON.stringify({ type: "VOICE_STATE", data: { user_id: event.user_id, is_speaking: true } }));
+            }, { channel_id: channelId });
+
+            await discordSdk.subscribe("SPEAKING_STOP", (event) => {
+              callback(JSON.stringify({ type: "VOICE_STATE", data: { user_id: event.user_id, is_speaking: false } }));
+            }, { channel_id: channelId });
+          }
+
+        } catch (error) {
+          console.error("[DiscordBridge] Error:", error);
+          callback(JSON.stringify({ type: "AUTH_FAILED", data: { error: String(error) } }));
+        }
+      },
+
+
+
+    };
+  </script>
+</head>
+
+<body>
+  <canvas id="canvas">
+    Your browser does not support the canvas tag.
+  </canvas>
+
+  <noscript>
+    Your browser does not support JavaScript.
+  </noscript>
+
+  <div id="status">
+    <img id="status-splash" src="$GODOT_SPLASH" alt="">
+    <progress id="status-progress"></progress>
+    <div id="status-notice"></div>
+  </div>
+
+  <script src="$GODOT_URL"></script>
+  <script>
+    const GODOT_CONFIG = $GODOT_CONFIG;
+    const engine = new Engine(GODOT_CONFIG);
+
+    (function () {
+      const statusOverlay = document.getElementById('status');
+      const statusProgress = document.getElementById('status-progress');
+      const statusNotice = document.getElementById('status-notice');
+
+      let initializing = true;
+      let statusMode = '';
+
+      function setStatusMode(mode) {
+        if (statusMode === mode || !initializing) return;
+        if (mode === 'hidden') {
+          statusOverlay.remove();
+          initializing = false;
+          return;
+        }
+        statusOverlay.style.visibility = 'visible';
+        statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+        statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+        statusMode = mode;
+      }
+
+      function setStatusNotice(text) {
+        while (statusNotice.lastChild) {
+          statusNotice.removeChild(statusNotice.lastChild);
+        }
+        var lines = text.split('\n');
+        lines.forEach((line) => {
+          statusNotice.appendChild(document.createTextNode(line));
+          statusNotice.appendChild(document.createElement('br'));
+        });
+      }
+
+      function displayFailureNotice(err) {
+        var msg = err.message || err;
+        console.error(msg);
+        setStatusNotice(msg);
+        setStatusMode('notice');
+        initializing = false;
+      }
+
+      if (!Engine.isWebGLAvailable()) {
+        displayFailureNotice('WebGL not available');
+      } else {
+        setStatusMode('progress');
+        engine.startGame({
+          'onProgress': function (current, total) {
+            if (current > 0 && total > 0) {
+              statusProgress.value = current;
+              statusProgress.max = total;
+            } else {
+              statusProgress.removeAttribute('value');
+              statusProgress.removeAttribute('max');
+            }
+          },
+        }).then(() => {
+          setStatusMode('hidden');
+        }, displayFailureNotice);
+      }
+    }());
+  </script>
+</body>
+
+</html>

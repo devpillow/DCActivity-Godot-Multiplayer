@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3 uid="uid://dl8k3hw88o26u"]
+
+[ext_resource type="PackedScene" uid="uid://dgvy0bhifsegt" path="res://scenes/sound_setting.tscn" id="1_x4jx1"]
+[ext_resource type="Script" uid="uid://ojciayfe40x0" path="res://scripts/ui.gd" id="1_yev5y"]
+[ext_resource type="Theme" uid="uid://l4pn3iyktmju" path="res://assets/Pixelify_Sans/fontTheme.tres" id="2_yev5y"]
+
+[node name="ui" type="CanvasLayer" node_paths=PackedStringArray("ErrorDisplayer", "SoundSetting")]
+script = ExtResource("1_yev5y")
+ErrorDisplayer = NodePath("ErrorDisplayer")
+SoundSetting = NodePath("soundSetting2")
+
+[node name="soundSetting2" parent="." instance=ExtResource("1_x4jx1")]
+
+[node name="ErrorDisplayer" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.784314)
+
+[node name="Label" type="Label" parent="ErrorDisplayer"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -251.0
+offset_top = -91.0
+offset_right = 2211.0
+offset_bottom = 554.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.2, 0.2)
+theme = ExtResource("2_yev5y")
+text = "Error occurred
+Re-join activity pls"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="soundSettingbtn" type="Button" parent="."]
+custom_minimum_size = Vector2(20, 20)
+offset_right = 8.0
+offset_bottom = 8.0
+scale = Vector2(0.1, 0.1)
+theme = ExtResource("2_yev5y")
+text = "S"
+
+[connection signal="button_up" from="soundSettingbtn" to="." method="_on_soundSetting_button_up"]

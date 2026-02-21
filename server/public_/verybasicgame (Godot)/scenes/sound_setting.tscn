@@ -1,0 +1,66 @@
+[gd_scene load_steps=4 format=3 uid="uid://dgvy0bhifsegt"]
+
+[ext_resource type="Script" uid="uid://7kujfrxhmscj" path="res://scripts/sound_setting.gd" id="1_lxlns"]
+[ext_resource type="Theme" uid="uid://l4pn3iyktmju" path="res://assets/Pixelify_Sans/fontTheme.tres" id="2_rbhr2"]
+[ext_resource type="AudioStream" uid="uid://b3gwbx3h4s7pd" path="res://assets/crafting-daydreams-free-game-music/FunCrafting.wav" id="3_rbhr2"]
+
+[node name="soundSetting" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lxlns")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.287)
+
+[node name="VolumnSlider" type="HSlider" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -429.0
+offset_top = -8.0
+offset_right = 429.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 1.0
+step = 0.01
+value = 0.6
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 3.0
+offset_top = -93.0
+offset_right = 4581.0
+offset_bottom = 228.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.2, 0.2)
+theme = ExtResource("2_rbhr2")
+text = "Music volumn"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_rbhr2")
+autoplay = true
+bus = &"BGM"
+
+[connection signal="value_changed" from="VolumnSlider" to="." method="_on_volumn_slider_value_changed"]
