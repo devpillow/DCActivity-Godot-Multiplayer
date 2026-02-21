@@ -12,3 +12,7 @@ Terminal `cloudflared tunnel --url http://localhost:{portNumber}`
 4. run `node server.js`
 
 5. run Discord Activity and see result (idk if it will work or not lol)
+
+
+CREDIT
+Art assets - https://cupnooble.itch.io/sprout-lands-asset-pack
