@@ -1,5 +1,6 @@
 To run the project
 
+0. Download project & type `cd server` -> `npm i` in terminal %project
 
 1. Create app in discord developer portal, get CLIENTID and SECRET, write them in the .env file (follow the example .env.example) + .discordshell
 
